@@ -105,7 +105,7 @@ class ResourceSupplier():
     def get_for_associate_mixin(self, item):
 
         try:
-            query = self.database.view('/db_views/for_associate_mixin',key=[item])
+            query = self.database.view('/db_views/for_associate_mixin',key=item)
         except Exception as e:
             logger.error("===== Get_for_associate_mixin : " + e.message + " ===== ")
             return None

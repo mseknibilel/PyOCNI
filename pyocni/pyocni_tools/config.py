@@ -90,7 +90,7 @@ design_doc = {
         },
         "for_associate_mixin": {
             "map": "(function(doc) { if ((doc.Type == \"Resource\")||(doc.Type == \"Link\"))"
-                   " emit([doc.OCCI_Location,],doc);});"
+                   " emit(doc.OCCI_Location,doc);});"
         },
         "for_delete_categories": {
             "map": "(function(doc) { if ((doc.Type == \"Kind\")||(doc.Type == \"Mixin\")||(doc.Type == \"Action\"))"

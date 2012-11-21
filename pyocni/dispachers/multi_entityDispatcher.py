@@ -184,6 +184,7 @@ class MultiEntityDispatcher(object):
                 self.res.status_code = return_code['Not Acceptable']
                 self.res.body = self.req.content_type + " is an unknown request content type"
 
+            else:
                 #Step[2a]: This is a dissociate mixin request
                 self.res.body, self.res.status_code = self.jungler.channel_delete_multi(jBody, self.path_url)
         else:

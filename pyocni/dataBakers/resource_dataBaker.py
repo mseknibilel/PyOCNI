@@ -479,9 +479,34 @@ class ResourceDataBaker():
 
             return occi_locations, doc_locations
 
+    def bake_to_delete_multi(self, req_path,occi_locations):
+
+        query = self.resource_sup.get_my_mixins(req_path)
+
+        if query is None:
+            return None,None
+        else:
+
+            mix_id = query.first()['value']
+
+            db_docs = list()
+            for item in occi_locations:
+
+                query2 = self.resource_sup.get_for_associate_mixin(item)
+
+                if query2.count() is 0:
+                    return None,None
+                else:
+                    q = query2.first()
+                    db_docs.append(q['value'])
+
+
+            return mix_id, db_docs
+
 #=======================================================================================================================
 #                                                   Independant functions
 #=======================================================================================================================
+
 def recursive_for_default_attributes(attributes):
     """
     Method to extract attributes from kind desctiption and complete the missing ones in the resource description

@@ -305,48 +305,28 @@ class MultiEntityJungler(object):
             @param jreq: OCCI_Locations of the resources
             @param req_url: URL of the request
         """
-        return "This method is under reconstruction", return_code['Not Implemented']
 
-    #        if jreq.has_key('X-OCCI-Location'):
-    #
-    #            url_path = joker.reformat_url_path(req_url)
-    #            db_docs = list()
-    #
-    #            try:
-    #                query = database.view('/db_views/my_mixins',key = url_path)
-    #            except Exception as e:
-    #                logger.error("Dissociate mixins : " + e.message)
-    #                return "An error has occurred, please check log for more details",return_code['Internal Server Error']
-    #
-    #
-    #            mix_id = query.first()['value']
-    #
-    #            to_search_for = jreq['X-OCCI-Location']
-    #            for item in to_search_for:
-    #                try:
-    #                    query = database.view('/db_views/for_associate_mixin',key=item)
-    #                except Exception as e:
-    #                    logger.error("Associate mixins : " + e.message)
-    #                    return "An error has occurred, please check log for more details",return_code['Internal Server Error']
-    #                if query.count() is 0:
-    #                    logger.error("Associate mixins  : " + item)
-    #                    return "An error has occurred, please check log for more details",return_code['Not Found']
-    #                else:
-    #                    q = query.first()
-    #                    db_docs.append(q['value'])
-    #
-    #            logger.debug("Delete path: delete on mixin path to Dissociate mixins channeled")
-    #            updated_entities,resp_code_e = dissociate_entities_from_a_mixin(mix_id,db_docs)
-    #        else:
-    #            updated_entities = list()
-    #            resp_code_e = return_code['Bad Request']
-    #
-    #        if resp_code_e is not return_code['OK']:
-    #            return "An error has occurred, please check log for more details",return_code['Bad Request']
-    #
-    #        database.save_docs(updated_entities,force_update=True,all_or_nothing=True)
-    #        backend_m.update_entities(db_docs,updated_entities)
-    #        return "",return_code['OK']
+
+        if jreq.has_key('X-OCCI-Location'):
+            #Step[1]: Get data from the database
+            mix_id,db_docs = self.rd_baker.bake_to_delete_multi(req_url,jreq['X-OCCI-Location'])
+
+            if mix_id is None or db_docs is None:
+                return "An error has occurred, please check log for more details", return_code['Internal Server Error']
+            else:
+                #Step[2]: Treat data
+                logger.debug("===== Channel_delete_multi: delete on mixin path to Dissociate mixins channeled =====")
+                updated_entities,resp_code_e = dissociate_entities_from_a_mixin(mix_id,db_docs)
+
+                if resp_code_e is not return_code['OK']:
+                    return "An error has occurred, please check log for more details",return_code['Bad Request']
+
+                #Step[3]: save the changes and forward the actions to the backend
+                self.PostMan.save_updated_docs_in_db(updated_entities)
+                backend_m.update_entities(db_docs,updated_entities)
+
+                logger.debug("===== Channel_delete_multi ==== : Finished with success")
+                return "",return_code['OK']
 
     def channel_trigger_actions(self, jBody, req_url, triggered_action):
         """
@@ -422,19 +402,17 @@ def dissociate_entities_from_a_mixin(mix_id, db_docs):
     """
     if mix_id is not None:
         for doc in db_docs:
+
             if doc['OCCI_Description'].has_key('mixins'):
                 var = doc['OCCI_Description']['mixins']
                 try:
-                    print mix_id
-                    print var
                     var.remove(mix_id)
-
                     doc['OCCI_Description']['mixins'] = var
                 except ValueError as e:
-                    logger.error('Diss a mixin: ' + e.message)
+                    logger.error('===== Dissociate_entities_from_mixin: ' + e.message+ " =====")
 
-        logger.debug("Dissociate mixin : Mixin dissociated with success")
+        logger.debug("===== Dissociate_entities_from_mixin : Mixin dissociated with success =====")
         return db_docs, return_code['OK']
     else:
-        logger.debug("Dissociate mixin : Mixin description problem")
+        logger.error("===== Dissociate_entities_from_mixin : Mixin description problem =====")
         return list(), return_code['Not Found']
